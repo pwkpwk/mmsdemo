@@ -104,6 +104,13 @@
             </intent-filter>
         </service>
 
+        <provider
+            android:authorities="com.skype.demo.mmsdemo.receivers.MmsFileProvider"
+            android:name=".receivers.MmsFileProvider"
+            android:enabled="true"
+            android:grantUriPermissions="true"
+            android:exported="false" />
+
 
     </application>
 

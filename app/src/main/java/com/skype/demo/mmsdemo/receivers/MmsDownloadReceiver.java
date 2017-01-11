@@ -2,14 +2,16 @@ package com.skype.demo.mmsdemo.receivers;
 
 import android.app.Activity;
 import android.content.BroadcastReceiver;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
-import java.io.File;
-import java.net.URI;
-import java.net.URISyntaxException;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 
 public final class MmsDownloadReceiver extends BroadcastReceiver {
 
@@ -18,24 +20,34 @@ public final class MmsDownloadReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
 
+        int resultCode = getResultCode();
+
         try {
-            final URI uri = new URI(intent.getStringExtra("location"));
-            final File contentFile = new File(uri);
+            String uriString = intent.getStringExtra("location");
+            Uri uri = Uri.parse(uriString);
+            ContentResolver resolver = context.getContentResolver();
+            InputStream stream = resolver.openInputStream(uri);
 
-            handleDownloadedMessage(getResultCode(), contentFile);
-
-            contentFile.delete();
-        } catch (URISyntaxException e) {
+            handleDownloadedMessage(resultCode, stream);
+            resolver.delete(uri, null, null);
+        } catch (FileNotFoundException e) {
         }
     }
 
-    private final void handleDownloadedMessage(final int resultCode, @NonNull final File messageContent) {
-        Log.i(TAG, "Message length=" + messageContent.length());
-
+    private final void handleDownloadedMessage(final int resultCode, @NonNull final InputStream stream) {
         if (Activity.RESULT_OK == resultCode) {
             //
             // Parse the downloaded message
             //
+            byte[] data = new byte[1024];
+            int readBytes;
+
+            try {
+                while ((readBytes = stream.read(data)) == data.length) {
+                    Log.v("PLOP!", "Read bytes=" + readBytes);
+                }
+            } catch (IOException e) {
+            }
         }
     }
 }

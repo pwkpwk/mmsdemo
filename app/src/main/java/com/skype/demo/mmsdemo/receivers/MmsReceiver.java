@@ -2,15 +2,16 @@ package com.skype.demo.mmsdemo.receivers;
 
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.provider.Telephony;
 import android.support.annotation.NonNull;
 import android.telephony.SmsManager;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 
 public class MmsReceiver extends BroadcastReceiver {
@@ -39,21 +40,37 @@ public class MmsReceiver extends BroadcastReceiver {
             // Download the message
             //
             final File outputDir = context.getCacheDir();
+
             try {
                 //
                 // Create a temporary file for the downloaded message and put its URI to the "location"
                 // exra value of the download result intent.
                 //
-                final File outputFile = File.createTempFile("mms", ".dat", outputDir);
-                final Uri contentUri = Uri.fromFile(outputFile);
+                final String FILE_NAME = "download.dat";
+                final File outputFile = new File(outputDir, FILE_NAME);
+
+                Uri.Builder builder = new Uri.Builder().authority("com.skype.demo.mmsdemo.receivers.MmsFileProvider").scheme(ContentResolver.SCHEME_CONTENT);
+                final Uri contentUri = builder.path(FILE_NAME).build();
+
                 final Intent downloadIntent = new Intent(MMS_RECEIVED_ACTION);
                 downloadIntent.putExtra("location", contentUri.toString());
                 final PendingIntent pi = PendingIntent.getBroadcast(context, 0, downloadIntent, 0);
-                //
-                // Invoke the SMS manager and tell it to broadcast the intent with the location of the downloaded message.
-                //
-                SmsManager.getDefault().downloadMultimediaMessage(context, location, contentUri, null, pi);
-            } catch (IOException e) {
+
+                AsyncTask.THREAD_POOL_EXECUTOR.execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        //
+                        // Invoke the SMS manager and tell it to broadcast the intent with the location of the downloaded message.
+                        //
+                        SmsManager.getDefault().downloadMultimediaMessage(
+                                context.getApplicationContext(),
+                                location,
+                                contentUri,
+                                null,
+                                pi);
+                    }
+                });
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
