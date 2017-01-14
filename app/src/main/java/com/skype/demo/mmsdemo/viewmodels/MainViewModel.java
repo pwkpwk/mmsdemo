@@ -2,10 +2,12 @@ package com.skype.demo.mmsdemo.viewmodels;
 
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.databinding.BaseObservable;
 import android.databinding.Bindable;
 import android.provider.Telephony;
 import android.support.annotation.NonNull;
+import android.util.Log;
 
 import com.skype.demo.mmsdemo.BR;
 
@@ -27,6 +29,15 @@ public final class MainViewModel extends BaseObservable {
         final String packageName = this.context.getPackageName();
         intent.putExtra(Telephony.Sms.Intents.EXTRA_PACKAGE_NAME, packageName);
         this.context.startActivity(intent);
+    }
+
+    public final void readMmsInbox() {
+        Cursor cursor = context.getContentResolver().query(Telephony.Mms.CONTENT_URI, null, null, null, null);
+
+        while (cursor.moveToNext()) {
+            Log.v("MainViewModel", "Read MMS");
+        }
+
     }
 
     public final void updateBindings() {

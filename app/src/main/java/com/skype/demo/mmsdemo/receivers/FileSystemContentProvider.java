@@ -12,10 +12,14 @@ import java.io.File;
 import java.io.FileNotFoundException;
 
 /**
- * Created by pakarpen on 1/10/17.
+ * Content provider that wraps the File API to open and delete files in the file system.
  */
 
-public class MmsFileProvider extends ContentProvider {
+public class FileSystemContentProvider extends ContentProvider {
+
+    private static final int READ_MODE = ParcelFileDescriptor.MODE_READ_ONLY;
+    private static final int WRITE_MODE = ParcelFileDescriptor.MODE_WRITE_ONLY|ParcelFileDescriptor.MODE_TRUNCATE|ParcelFileDescriptor.MODE_CREATE;
+
     @Override
     public boolean onCreate() {
         return true;
@@ -41,9 +45,13 @@ public class MmsFileProvider extends ContentProvider {
 
     @Override
     public int delete(Uri uri, String s, String[] strings) {
-        File file = new File(getContext().getCacheDir(), uri.getPath());
-        file.delete();
-        return 0;
+        int affected = 0;
+        File file = new File(uri.getPath());
+
+        if (file.exists() && file.delete()) {
+            affected = 1;
+        }
+        return affected;
     }
 
     @Override
@@ -54,10 +62,7 @@ public class MmsFileProvider extends ContentProvider {
     @Nullable
     @Override
     public ParcelFileDescriptor openFile(Uri uri, String fileMode) throws FileNotFoundException {
-        File file = new File(getContext().getCacheDir(), uri.getPath());
-        int mode = (TextUtils.equals(fileMode, "r") ? ParcelFileDescriptor.MODE_READ_ONLY :
-                ParcelFileDescriptor.MODE_WRITE_ONLY
-                        |ParcelFileDescriptor.MODE_TRUNCATE
-                        |ParcelFileDescriptor.MODE_CREATE);
-        return ParcelFileDescriptor.open(file, mode);    }
+        int mode = TextUtils.equals(fileMode, "r") ? READ_MODE : WRITE_MODE;
+        return ParcelFileDescriptor.open(new File(uri.getPath()), mode);
+    }
 }
